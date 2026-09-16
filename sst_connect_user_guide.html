@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SST Connect User Guide</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom styles for chart containers and scrollbars */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 550px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 280px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 320px;
+            }
+        }
+        .tab-active {
+            border-bottom: 3px solid #0284c7;
+            color: #0284c7;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<!-- Chosen Palette: Warm Sand & Slate -->
+<!-- Application Structure Plan: Designed as a dynamic single-page application with a role-filtering engine at the top. Users can instantly switch perspectives (All Roles, Principal/VP, SST Continuum, SST Member & EAL Teacher) to automatically highlight relevant modules, permissions, and quick navigation steps. The app is divided into 7 structured tabs: Overview, Quick Start, Referral Workflow, Main Features, My Workspace Deep Dive, Important Terms, and Support & Contact. Interactive elements include step-by-step workflow toggles, live Chart.js visualization samples for dashboards and caseload summaries, a search/filter engine for terminology, and explicit role-access badges. -->
+<!-- Visualization & Content Choices: 
+  - Overview Dashboard Preview -> Interactive Bar & Pie Charts -> Chart.js Canvas -> Contextual preview of urgency and caseload distributions -> No SVG.
+  - Role Capabilities -> Interactive Table & Filterable Cards -> HTML/Tailwind JS Filter -> Allows instant comparison of role capabilities and quick actions -> No SVG.
+  - Referral Workflow -> Interactive Step Cards with Toggle -> HTML/Tailwind CSS Grid + JS State Switcher -> Clarifies step-by-step progression and direct entry shortcut -> No SVG/Mermaid.
+  - Important Terms -> Searchable Filter Grid -> HTML/Tailwind JS Search -> Quick lookup for grades, tiers, urgency, and support types -> No SVG.
+-->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<body class="bg-slate-50 text-slate-800 antialiased font-sans leading-relaxed min-h-screen flex flex-col">
+
+    <!-- Header Navigation Bar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-sky-600 text-white font-bold text-lg px-3 py-1 rounded-md tracking-wide">
+                        SST
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-900 leading-tight">SST Connect</h1>
+                        <p class="text-xs text-slate-500">Internal User Guide & Operation Handbook</p>
+                    </div>
+                </div>
+
+                <!-- Role Selector Simulator -->
+                <div class="flex items-center space-x-2">
+                    <label for="role-select" class="text-xs sm:text-sm font-medium text-slate-600 hidden md:inline">View as Role:</label>
+                    <select id="role-select" onchange="switchRole(this.value)" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs sm:text-sm rounded-lg focus:ring-sky-500 focus:border-sky-500 p-2 font-medium">
+                        <option value="all">🌐 All Roles View</option>
+                        <option value="pvp">👑 Principal & Vice Principal</option>
+                        <option value="continuum">🔑 SST Continuum</option>
+                        <option value="member">📋 SST Member & EAL Teacher</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Navigation Tabs -->
+        <nav class="bg-slate-100 border-t border-slate-200 overflow-x-auto">
+            <div class="max-w-7xl mx-auto px-4 flex space-x-6 text-xs sm:text-sm whitespace-nowrap">
+                <button onclick="showSection('section-overview')" id="nav-section-overview" class="py-3 px-1 tab-active hover:text-sky-600 transition">1. Overview</button>
+                <button onclick="showSection('section-quickstart')" id="nav-section-quickstart" class="py-3 px-1 text-slate-600 hover:text-sky-600 transition">2. Quick Start</button>
+                <button onclick="showSection('section-workflow')" id="nav-section-workflow" class="py-3 px-1 text-slate-600 hover:text-sky-600 transition">3. Referral Workflow</button>
+                <button onclick="showSection('section-features')" id="nav-section-features" class="py-3 px-1 text-slate-600 hover:text-sky-600 transition">4. Main Features</button>
+                <button onclick="showSection('section-workspace')" id="nav-section-workspace" class="py-3 px-1 text-slate-600 hover:text-sky-600 transition">5. My Workspace</button>
+                <button onclick="showSection('section-terms')" id="nav-section-terms" class="py-3 px-1 text-slate-600 hover:text-sky-600 transition">6. Important Terms</button>
+                <button onclick="showSection('section-contact')" id="nav-section-contact" class="py-3 px-1 text-slate-600 hover:text-sky-600 transition">7. Help & Contact</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Role Filter Active Notification Banner -->
+    <div id="role-banner" class="bg-sky-50 border-b border-sky-200 px-4 py-2 text-xs sm:text-sm text-sky-800 hidden">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <span>Filtering view for role: <strong id="active-role-name">All Roles</strong></span>
+            <button onclick="switchRole('all')" class="text-sky-700 underline font-medium hover:text-sky-900">Reset to All Roles</button>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- SECTION 1: OVERVIEW -->
+        <section id="section-overview" class="space-y-6">
+            <!-- Introduction Paragraph -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <h2 class="text-xl font-bold text-slate-900">What is SST Connect?</h2>
+                <p class="text-slate-600 leading-relaxed text-sm sm:text-base">
+                    <strong>SST Connect</strong> is an internal Student Support Team (SST) management platform designed to organize and streamline school support operations. It helps centralize support requests, team discussions, caseload assignments, and student documentation.
+                </p>
+                
+                <!-- Mandatory Purpose Statement Callout -->
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg text-amber-900 text-xs sm:text-sm leading-relaxed">
+                    <p class="font-bold mb-1">Important System Purpose Note:</p>
+                    <p>SST Connect is NOT intended to replace existing school systems or databases. It serves as an internal operational tool to support SST processes, improve collaboration, and centralize student support information.</p>
+                </div>
+            </div>
+
+            <!-- Key Capabilities Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-sky-300 transition">
+                    <div class="text-2xl mb-2">📋</div>
+                    <h3 class="font-bold text-slate-800 text-base mb-1">Referral Management</h3>
+                    <p class="text-slate-600 text-xs leading-normal">Processes incoming Google Form referrals, allows intake reviews, tier designations, and support personnel assignments.</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-sky-300 transition">
+                    <div class="text-2xl mb-2">📂</div>
+                    <h3 class="font-bold text-slate-800 text-base mb-1">Student Support Documentation</h3>
+                    <p class="text-slate-600 text-xs leading-normal">Centralizes Approaches to Learning (ATL), Anecdotal Records, Parent Meetings, and structured Support Plans in one place.</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-sky-300 transition">
+                    <div class="text-2xl mb-2">👥</div>
+                    <h3 class="font-bold text-slate-800 text-base mb-1">Caseload & Workspace Management</h3>
+                    <p class="text-slate-600 text-xs leading-normal">Provides tailored personal dashboards based on user email logins, categorizing active caseloads by urgency status.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: QUICK START BY ROLE -->
+        <section id="section-quickstart" class="space-y-6 hidden">
+            <!-- Introduction Paragraph -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900 mb-2">Quick Start by Role</h2>
+                <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    Select or filter your role to understand your daily navigation workflow, accessible modules, home quick actions, and exact permission capabilities within SST Connect.
+                </p>
+            </div>
+
+            <!-- Interactive Role Navigation Pathways -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- PVP Pathway -->
+                <div class="role-card role-pvp bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded">Principal & Vice Principal</span>
+                        <span class="text-xs text-slate-400 font-medium">View Only</span>
+                    </div>
+                    <p class="text-xs text-slate-600">Quick Workflow Navigation:</p>
+                    <div class="bg-slate-50 p-3 rounded border border-slate-200 text-xs font-mono text-slate-700 leading-relaxed">
+                        Open SST Connect <br>
+                        ➔ Home Dashboard <span class="text-slate-400">(View Totals)</span> <br>
+                        ➔ Overview Dashboard <span class="text-slate-400">(View Trends)</span>
+                    </div>
+                </div>
+
+                <!-- SST Continuum Pathway -->
+                <div class="role-card role-continuum bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded">SST Continuum</span>
+                        <span class="text-xs text-emerald-600 font-medium">Full Access</span>
+                    </div>
+                    <p class="text-xs text-slate-600">Quick Workflow Navigation:</p>
+                    <div class="bg-slate-50 p-3 rounded border border-slate-200 text-xs font-mono text-slate-700 leading-relaxed">
+                        Open Referral Responses <br>
+                        ➔ Review Referral <br>
+                        ➔ Discuss & Assign SST/EAL <br>
+                        ➔ Manage Profile
+                    </div>
+                </div>
+
+                <!-- SST Member & EAL Teacher Pathway -->
+                <div class="role-card role-member bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-sky-100 text-sky-800 text-xs font-bold px-2.5 py-1 rounded">SST Member & EAL Teacher</span>
+                        <span class="text-xs text-sky-600 font-medium">Edit Access</span>
+                    </div>
+                    <p class="text-xs text-slate-600">Quick Workflow Navigation:</p>
+                    <div class="bg-slate-50 p-3 rounded border border-slate-200 text-xs font-mono text-slate-700 leading-relaxed">
+                        Open My Workspace <br>
+                        ➔ Check Assigned Cases <br>
+                        ➔ Open Student Profile <br>
+                        ➔ Add/Update Records
+                    </div>
+                </div>
+            </div>
+
+            <!-- Role Access & Permissions Summary Table -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-200 bg-slate-50">
+                    <h3 class="font-bold text-slate-800 text-sm sm:text-base">Role Access & Permissions Summary</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+                        <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-semibold">
+                            <tr>
+                                <th class="p-3.5 border-b">Role</th>
+                                <th class="p-3.5 border-b">Available Modules & Pages</th>
+                                <th class="p-3.5 border-b">Quick Actions on Home</th>
+                                <th class="p-3.5 border-b">Permissions & Capabilities</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <!-- Principal & Vice Principal Row -->
+                            <tr class="role-row role-pvp hover:bg-slate-50">
+                                <td class="p-3.5 font-bold text-slate-800 whitespace-nowrap">Principal & Vice Principal</td>
+                                <td class="p-3.5">
+                                    <ul class="list-disc list-inside space-y-0.5">
+                                        <li>Home</li>
+                                        <li>Overview Dashboard</li>
+                                    </ul>
+                                </td>
+                                <td class="p-3.5 italic text-slate-400">None</td>
+                                <td class="p-3.5">
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li><strong>View only</strong> across all accessible modules.</li>
+                                        <li>Cannot edit data.</li>
+                                        <li>Used to review overall student support information and school trends.</li>
+                                    </ul>
+                                </td>
+                            </tr>
+
+                            <!-- SST Continuum Row -->
+                            <tr class="role-row role-continuum hover:bg-slate-50">
+                                <td class="p-3.5 font-bold text-slate-800 whitespace-nowrap">SST Continuum</td>
+                                <td class="p-3.5">
+                                    <ul class="list-disc list-inside space-y-0.5">
+                                        <li>Home</li>
+                                        <li>Student Profile</li>
+                                        <li>Student Archive</li>
+                                        <li>Resources Center</li>
+                                        <li>SST Caseload Summary</li>
+                                        <li>PYP Consultations / Consult Records</li>
+                                        <li>Referral Responses</li>
+                                        <li>Parent Meetings</li>
+                                        <li>Support Plans</li>
+                                        <li>My Workspace</li>
+                                        <li>Overview Dashboard</li>
+                                    </ul>
+                                </td>
+                                <td class="p-3.5">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">Resource Center</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">Latest Anecdotal Records</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">Student Profiles</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">PYP Consultations / Consult Records</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">MS Students</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">WS Students</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">PS Students</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">Parent Meetings</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">Add Support Plan</span>
+                                    </div>
+                                </td>
+                                <td class="p-3.5">
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li><strong>Full view and edit access</strong>.</li>
+                                        <li>Review and manage incoming Referral Responses.</li>
+                                        <li>Add notes to referral responses.</li>
+                                        <li>Assign SST Members and EAL Teachers.</li>
+                                        <li>Determine appropriate Tiers.</li>
+                                        <li>Manage student support documentation.</li>
+                                    </ul>
+                                </td>
+                            </tr>
+
+                            <!-- SST Member & EAL Teacher Row -->
+                            <tr class="role-row role-member hover:bg-slate-50">
+                                <td class="p-3.5 font-bold text-slate-800 whitespace-nowrap">SST Member & EAL Teacher</td>
+                                <td class="p-3.5">
+                                    <ul class="list-disc list-inside space-y-0.5">
+                                        <li>Home</li>
+                                        <li>Student Profile</li>
+                                        <li>Student Archive</li>
+                                        <li>Resources Center</li>
+                                        <li>SST Caseload Summary</li>
+                                        <li>PYP Consultations / Consult Records</li>
+                                        <li>Parent Meetings</li>
+                                        <li>Support Plans</li>
+                                        <li>My Workspace</li>
+                                        <li>Overview Dashboard</li>
+                                    </ul>
+                                </td>
+                                <td class="p-3.5">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">Resource Center</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">Latest Anecdotal Records</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">Student Profiles</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">PYP Consultations / Consult Records</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">MS Students</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">WS Students</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">PS Students</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">Parent Meetings</span>
+                                        <span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-xs border border-slate-200">Add Support Plan</span>
+                                    </div>
+                                </td>
+                                <td class="p-3.5">
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li><strong>View and edit access</strong> within available modules.</li>
+                                        <li><strong class="text-rose-600">No access</strong> to Referral Responses.</li>
+                                        <li>Cannot assign referrals through Referral Responses.</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: REFERRAL WORKFLOW -->
+        <section id="section-workflow" class="space-y-6 hidden">
+            <!-- Introduction Paragraph -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900 mb-2">Referral & Case Onboarding Workflow</h2>
+                <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    Standard student support referrals follow a structured multi-step progression from initial submission to active case management. Follow the interactive diagram below to explore each stage of the intake process.
+                </p>
+            </div>
+
+            <!-- Workflow Step Diagram (Pure HTML/CSS - NO SVG/Mermaid) -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                <h3 class="font-bold text-slate-800 text-base">Standard Referral Progression</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-7 gap-2 items-center text-center">
+                    <!-- Step 1 -->
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex flex-col items-center">
+                        <span class="w-6 h-6 bg-slate-700 text-white text-xs font-bold rounded-full flex items-center justify-center mb-1">1</span>
+                        <span class="text-xs font-semibold text-slate-800">Google Form Referral</span>
+                        <span class="text-[10px] text-slate-500 mt-1">Submitted by staff</span>
+                    </div>
+
+                    <div class="hidden md:block text-slate-400 font-bold text-lg">➔</div>
+
+                    <!-- Step 2 -->
+                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg flex flex-col items-center">
+                        <span class="w-6 h-6 bg-amber-600 text-white text-xs font-bold rounded-full flex items-center justify-center mb-1">2</span>
+                        <span class="text-xs font-semibold text-amber-900">Referral Responses</span>
+                        <span class="text-[10px] text-amber-700 font-medium mt-1">SST Continuum Only</span>
+                    </div>
+
+                    <div class="hidden md:block text-slate-400 font-bold text-lg">➔</div>
+
+                    <!-- Step 3 -->
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex flex-col items-center">
+                        <span class="w-6 h-6 bg-slate-700 text-white text-xs font-bold rounded-full flex items-center justify-center mb-1">3</span>
+                        <span class="text-xs font-semibold text-slate-800">Review & Discuss</span>
+                        <span class="text-[10px] text-slate-500 mt-1">Continuum with SST Team</span>
+                    </div>
+
+                    <div class="hidden md:block text-slate-400 font-bold text-lg">➔</div>
+
+                    <!-- Step 4 -->
+                    <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg flex flex-col items-center">
+                        <span class="w-6 h-6 bg-emerald-600 text-white text-xs font-bold rounded-full flex items-center justify-center mb-1">4</span>
+                        <span class="text-xs font-semibold text-emerald-900">Assign SST / EAL</span>
+                        <span class="text-[10px] text-emerald-700 mt-1">Continuum sets Tier & Team</span>
+                    </div>
+                </div>
+
+                <!-- Step 5-7 continuation row -->
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-2 items-center text-center pt-2 border-t border-slate-100">
+                    <!-- Step 5 -->
+                    <div class="bg-sky-50 border border-sky-200 p-3 rounded-lg flex flex-col items-center md:col-span-2">
+                        <span class="w-6 h-6 bg-sky-600 text-white text-xs font-bold rounded-full flex items-center justify-center mb-1">5</span>
+                        <span class="text-xs font-semibold text-sky-900">Case Appears in My Workspace</span>
+                        <span class="text-[10px] text-sky-700 mt-1">Linked automatically via user's login email</span>
+                    </div>
+
+                    <div class="hidden md:block text-slate-400 font-bold text-lg">➔</div>
+
+                    <!-- Step 6 & 7 -->
+                    <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex flex-col items-center md:col-span-2">
+                        <span class="w-6 h-6 bg-slate-700 text-white text-xs font-bold rounded-full flex items-center justify-center mb-1">6 & 7</span>
+                        <span class="text-xs font-semibold text-slate-800">Input Profile & Ongoing Support</span>
+                        <span class="text-[10px] text-slate-500 mt-1">Add to Student Profile; record Anecdotal/Meetings/Plans</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Direct Entry Shortcut Banner -->
+            <div class="bg-sky-50 border-l-4 border-sky-500 p-5 rounded-r-xl shadow-sm space-y-2">
+                <h3 class="font-bold text-sky-900 text-base">Direct Entry Shortcut for Existing Cases</h3>
+                <p class="text-xs sm:text-sm text-sky-800 leading-relaxed">
+                    For students who are <strong>already part of an SST member's caseload</strong>, you do not need to submit or process a referral form. The student can be added directly using the creation form inside <strong>Student Profile</strong>.
+                </p>
+            </div>
+        </section>
+
+        <!-- SECTION 4: MAIN FEATURES & MODULES -->
+        <section id="section-features" class="space-y-6 hidden">
+            <!-- Introduction Paragraph -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900 mb-2">Main Features & Application Modules</h2>
+                <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    SST Connect provides specialized modules tailored for monitoring student counts, tracking urgency tiers, reviewing consultation notes, and maintaining comprehensive case documentation across academic years.
+                </p>
+            </div>
+
+            <!-- Interactive Module Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Home / Homepage -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-slate-800 text-base">Home / Homepage</h3>
+                        <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded">All Roles</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        The landing page when opening SST Connect. Displays total active student counts for the academic year selected on the homepage, filtered by urgency status:
+                    </p>
+                    <ul class="list-disc list-inside text-xs text-slate-600 space-y-0.5 pl-1">
+                        <li>Total Active Students</li>
+                        <li>Total WS Students (Well-being & Safety)</li>
+                        <li>Total PS Students (Priority of Support)</li>
+                        <li>Total MS Students (Monitor of Support)</li>
+                        <li>Quick Actions buttons</li>
+                    </ul>
+                </div>
+
+                <!-- Overview Dashboard -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-slate-800 text-base">Overview Dashboard</h3>
+                        <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded">All Roles (View Only for PVP)</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Displays analytical charts detailing active student distribution by:
+                    </p>
+                    <ul class="list-disc list-inside text-xs text-slate-600 space-y-0.5 pl-1">
+                        <li>Urgency Status (MS, PS, WS) & Tiers</li>
+                        <li>Presenting Issues & Gender</li>
+                        <li>Students by Grade</li>
+                        <li>Filtered views for WS, PS, and MS</li>
+                    </ul>
+                </div>
+
+                <!-- Resources Center -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-slate-800 text-base">Resources Center</h3>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Continuum & Members</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Provides direct access to external tools and web links (shared documents, calendars, spreadsheets). Users can click listed links to open resources directly or add new links by filling in:
+                    </p>
+                    <span class="inline-block bg-slate-50 border text-[11px] px-2 py-1 rounded text-slate-700 font-mono">
+                        Name + Category + Link
+                    </span>
+                </div>
+
+                <!-- Latest Anecdotal Records -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-slate-800 text-base">Latest Anecdotal Records</h3>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Continuum & Members</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Displays a unified, real-time feed of the latest anecdotal entries created across all active cases by all team users in one centralized timeline view.
+                    </p>
+                </div>
+
+                <!-- Student Profile -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-slate-800 text-base">Student Profile</h3>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Continuum & Members</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Displays all active students in the SST caseload for the selected academic year, grouped by grade level. From here, staff can:
+                    </p>
+                    <ul class="list-disc list-inside text-xs text-slate-600 space-y-0.5 pl-1">
+                        <li>Add new students or edit existing details</li>
+                        <li>Add or access ATL (Approaches to Learning)</li>
+                        <li>Add or access Anecdotal Records</li>
+                        <li>Add or access Parent Meetings & Support Plans</li>
+                    </ul>
+                </div>
+
+                <!-- Consul Records / PYP Consultations -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-slate-800 text-base">Consul Records / PYP Consult</h3>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Continuum & Members</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Contains FYI student information used as discussion notes and reference material for meetings. The core database originates from Excel. Entries can be updated via Excel import or through the internal SST Connect form.
+                    </p>
+                </div>
+
+                <!-- Categorized Student Views (MS, WS, PS) -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-slate-800 text-base">Categorized Views (MS/WS/PS)</h3>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Continuum & Members</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Dedicated filtered pages showing active students for the selected academic year categorized by urgency status:
+                    </p>
+                    <ul class="list-disc list-inside text-xs text-slate-600 space-y-0.5 pl-1">
+                        <li><strong>MS Students:</strong> Monitor of Support</li>
+                        <li><strong>WS Students:</strong> Well-being & Safety Support</li>
+                        <li><strong>PS Students:</strong> Priority of Support</li>
+                    </ul>
+                </div>
+
+                <!-- Parent Meetings & Add Support Plan -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-slate-800 text-base">Parent Meetings & Plans</h3>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Continuum & Members</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        <strong>Parent Meetings:</strong> Displays a complete list of parent meeting records created by users for their respective students.<br>
+                        <strong>Add Support Plan:</strong> A Home quick action that opens the Support Plan form directly, letting users select a student from a dropdown without opening Student Profile first.
+                    </p>
+                </div>
+
+                <!-- Student Archive -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-slate-800 text-base">Student Archive</h3>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Continuum & Members</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Stores historical records for students who have been in the SST caseload across multiple academic years. Filterable by academic year and student status:
+                    </p>
+                    <div class="flex space-x-1 mt-1">
+                        <span class="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded border border-emerald-200">Active</span>
+                        <span class="bg-slate-100 text-slate-600 text-[10px] px-1.5 py-0.5 rounded border border-slate-200">Inactive</span>
+                        <span class="bg-purple-50 text-purple-700 text-[10px] px-1.5 py-0.5 rounded border border-purple-200">Graduated</span>
+                    </div>
+                </div>
+
+                <!-- SST Caseload Summary -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-slate-800 text-base">SST Caseload Summary</h3>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Continuum & Members</span>
+                    </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Features a visual pie chart displaying the distribution of active students managed by each registered SST member in SST Connect.
+                    </p>
+                </div>
+
+                <!-- Referral Responses (Continuum Only) -->
+                <div class="bg-amber-50 p-5 rounded-xl border border-amber-200 shadow-sm space-y-2 col-span-1 md:col-span-2 lg:col-span-1">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-amber-900 text-base">Referral Responses</h3>
+                        <span class="bg-amber-200 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded">SST Continuum ONLY</span>
+                    </div>
+                    <p class="text-xs text-amber-800 leading-relaxed">
+                        Exclusive module for the SST Continuum to review incoming Google Form referral submissions, add notes, set tiers, and assign support personnel prior to official case setup.
+                    </p>
+                    <p class="text-[11px] text-rose-700 font-semibold mt-1">
+                        🚫 SST Members & EAL Teachers have no access to this module.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Visual Chart Examples Container -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="font-bold text-slate-800 text-base">Interactive Overview Visualizations Sample</h3>
+                <p class="text-xs text-slate-500">Representative examples of analytics charts generated in SST Connect's Overview Dashboard and Caseload Summary.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Chart 1: Urgency Distribution -->
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col items-center">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2">Active Students by Urgency Status</h4>
+                        <div class="chart-container">
+                            <canvas id="chartUrgency"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Caseload Summary Pie -->
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col items-center">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2">SST Caseload Summary Distribution</h4>
+                        <div class="chart-container">
+                            <canvas id="chartCaseload"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: MY WORKSPACE DEEP DIVE -->
+        <section id="section-workspace" class="space-y-6 hidden">
+            <!-- Introduction Paragraph -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900 mb-2">My Workspace vs. Student Profile</h2>
+                <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    <strong>My Workspace</strong> is a personalized operational dashboard connected directly to the email account used to log into SST Connect. It filters and presents only records relevant to your individual assigned workload.
+                </p>
+            </div>
+
+            <!-- Key Distinction Card Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Student Profile Box -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <h3 class="font-bold text-slate-800 text-base">Student Profile Module</h3>
+                        <span class="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded font-semibold">School-Wide Scope</span>
+                    </div>
+                    <ul class="list-disc list-inside text-xs text-slate-600 space-y-2 leading-relaxed">
+                        <li>Shows <strong>all active students</strong> across the entire school for the selected academic year.</li>
+                        <li>Organized and grouped strictly by grade level.</li>
+                        <li>Allows adding new active students to the central caseload.</li>
+                        <li>Accessible by all SST Continuum, SST Members, and EAL Teachers.</li>
+                    </ul>
+                </div>
+
+                <!-- My Workspace Box -->
+                <div class="bg-sky-50 p-5 rounded-xl border border-sky-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between border-b border-sky-100 pb-2">
+                        <h3 class="font-bold text-sky-900 text-base">My Workspace Module</h3>
+                        <span class="bg-sky-200 text-sky-900 text-xs px-2 py-0.5 rounded font-semibold">Personalized Email Scope</span>
+                    </div>
+                    <ul class="list-disc list-inside text-xs text-sky-800 space-y-2 leading-relaxed">
+                        <li>Filters exclusively to students assigned to your <strong>email login</strong>.</li>
+                        <li>Divided into 4 individual workload streams.</li>
+                        <li>Ensures quick access to active cases without searching through school-wide rosters.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 4 Personal Sections of My Workspace -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="font-bold text-slate-800 text-base">The 4 Sections of My Workspace</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div class="text-sky-600 font-bold text-sm mb-1">1. My Students</div>
+                        <p class="text-xs text-slate-600">Displays active students directly assigned to your email account as Assign SST or Assign EAL.</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div class="text-sky-600 font-bold text-sm mb-1">2. My Parent Meetings</div>
+                        <p class="text-xs text-slate-600">Displays parent meeting records linked specifically to your assigned students or caseload.</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div class="text-sky-600 font-bold text-sm mb-1">3. My Support Plans</div>
+                        <p class="text-xs text-slate-600">Displays active support plans created for or linked to your assigned caseload.</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div class="text-sky-600 font-bold text-sm mb-1">4. New Referrals</div>
+                        <p class="text-xs text-slate-600">Displays newly referred cases assigned to you by the SST Continuum team.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: IMPORTANT TERMS & DEFINITIONS -->
+        <section id="section-terms" class="space-y-6 hidden">
+            <!-- Introduction Paragraph -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <h2 class="text-xl font-bold text-slate-900">Important Terms & Field Definitions</h2>
+                <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    Standard definitions and allowed dropdown values used across SST Connect fields. Use the search box below to quickly filter field names, allowed values, or definitions.
+                </p>
+                <!-- Search Box -->
+                <div class="relative">
+                    <input type="text" id="terms-search" onkeyup="filterTerms()" placeholder="🔍 Search terms, fields, tiers, urgency statuses..." class="w-full pl-3 pr-4 py-2 border border-slate-300 rounded-lg text-xs sm:text-sm focus:ring-sky-500 focus:border-sky-500">
+                </div>
+            </div>
+
+            <!-- Terms Table -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs sm:text-sm text-slate-600" id="terms-table">
+                        <thead class="bg-slate-100 text-slate-700 uppercase text-xs font-semibold">
+                            <tr>
+                                <th class="p-3.5 border-b">Category</th>
+                                <th class="p-3.5 border-b">Field Name</th>
+                                <th class="p-3.5 border-b">Allowed Values / Standard Definition</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <!-- Grade Levels -->
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-semibold text-slate-700">Grade Levels</td>
+                                <td class="p-3.5 font-bold text-slate-800">Grade</td>
+                                <td class="p-3.5">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="bg-slate-100 border px-1.5 py-0.5 rounded text-xs">PG A</span>
+                                        <span class="bg-slate-100 border px-1.5 py-0.5 rounded text-xs">PG B</span>
+                                        <span class="bg-slate-100 border px-1.5 py-0.5 rounded text-xs">PYP A</span>
+                                        <span class="bg-slate-100 border px-1.5 py-0.5 rounded text-xs">PYP B</span>
+                                        <span class="bg-slate-100 border px-1.5 py-0.5 rounded text-xs">PYP 1</span>
+                                        <span class="bg-slate-100 border px-1.5 py-0.5 rounded text-xs">PYP 2</span>
+                                        <span class="bg-slate-100 border px-1.5 py-0.5 rounded text-xs">PYP 3</span>
+                                        <span class="bg-slate-100 border px-1.5 py-0.5 rounded text-xs">PYP 4</span>
+                                        <span class="bg-slate-100 border px-1.5 py-0.5 rounded text-xs">PYP 5</span>
+                                        <span class="bg-slate-100 border px-1.5 py-0.5 rounded text-xs">PYP 6</span>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Student Status -->
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-semibold text-slate-700" rowspan="3">Student Status</td>
+                                <td class="p-3.5 font-bold text-slate-800">Active</td>
+                                <td class="p-3.5">Student is currently enrolled at Sekolah Ciputra.</td>
+                            </tr>
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-bold text-slate-800">Graduated</td>
+                                <td class="p-3.5">Student has graduated and is no longer an active student at Sekolah Ciputra.</td>
+                            </tr>
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-bold text-slate-800">Inactive</td>
+                                <td class="p-3.5">Student has left, been withdrawn, transferred out, or is no longer active at Sekolah Ciputra.</td>
+                            </tr>
+
+                            <!-- Assignments -->
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-semibold text-slate-700" rowspan="3">Assignments</td>
+                                <td class="p-3.5 font-bold text-slate-800">Assign SST</td>
+                                <td class="p-3.5">The designated SST Member responsible for managing the student/case.</td>
+                            </tr>
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-bold text-slate-800">Assign EAL</td>
+                                <td class="p-3.5">The designated EAL Teacher responsible for supporting the student/case.</td>
+                            </tr>
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-bold text-slate-800">Contact</td>
+                                <td class="p-3.5">The email address of the student's homeroom teacher (entered in Student Profile).</td>
+                            </tr>
+
+                            <!-- Support Levels / Tiers -->
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-semibold text-slate-700">Support Levels</td>
+                                <td class="p-3.5 font-bold text-slate-800">Tier</td>
+                                <td class="p-3.5">
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded text-xs font-medium">EAL</span>
+                                        <span class="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded text-xs font-medium">Tier 1 / Consultations</span>
+                                        <span class="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded text-xs font-medium">Tier 2</span>
+                                        <span class="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded text-xs font-medium">Tier 3</span>
+                                        <span class="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded text-xs font-medium">Tier 2 + EAL</span>
+                                        <span class="bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded text-xs font-medium">Tier 3 + EAL</span>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Case Focus / Presenting Issue -->
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-semibold text-slate-700">Case Focus</td>
+                                <td class="p-3.5 font-bold text-slate-800">Presenting Issue</td>
+                                <td class="p-3.5">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
+                                        <div>• Learning</div>
+                                        <div>• Behaviour / Social Emotional</div>
+                                        <div>• EAL</div>
+                                        <div>• Learning & Behaviour / Social Emotional</div>
+                                        <div>• Learning & EAL</div>
+                                        <div>• Behaviour / Social Emotional & EAL</div>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Urgency Level -->
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-semibold text-slate-700">Urgency Level</td>
+                                <td class="p-3.5 font-bold text-slate-800">Urgency Status</td>
+                                <td class="p-3.5 space-y-1">
+                                    <div class="text-xs"><strong>MS</strong> = Monitor of Support</div>
+                                    <div class="text-xs"><strong>PS</strong> = Priority of Support</div>
+                                    <div class="text-xs"><strong>WS</strong> = Well-being & Safety Support</div>
+                                </td>
+                            </tr>
+
+                            <!-- Support Type -->
+                            <tr class="term-row hover:bg-slate-50">
+                                <td class="p-3.5 font-semibold text-slate-700">Support Type</td>
+                                <td class="p-3.5 font-bold text-slate-800">Type of Support</td>
+                                <td class="p-3.5">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
+                                        <div>• In Class Support</div>
+                                        <div>• Out of Class Support</div>
+                                        <div>• In Class Support + Shadow</div>
+                                        <div>• Out of Class Support + Shadow</div>
+                                        <div>• IC + OC</div>
+                                        <div>• IC + OC + Shadow</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 7: HELP & CONTACT -->
+        <section id="section-contact" class="space-y-6 hidden">
+            <!-- Introduction Paragraph -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h2 class="text-xl font-bold text-slate-900 mb-2">Help, Support & Contact Information</h2>
+                <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    If you have any questions, encounter system issues, notice incorrect student information, or would like to suggest operational improvements to SST Connect, please reach out to the system contact below.
+                </p>
+            </div>
+
+            <!-- Contact Card -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-lg mx-auto text-center space-y-3">
+                <div class="w-16 h-16 bg-sky-100 text-sky-800 text-xl font-bold rounded-full flex items-center justify-center mx-auto">
+                    YA
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Yakobus Alexandro</h3>
+                    <p class="text-xs text-slate-500">SST Connect Lead Administrator</p>
+                </div>
+                <div class="pt-2">
+                    <a href="mailto:yakobusalexandro@sekolahciputra.sch.id" class="inline-flex items-center px-4 py-2 bg-sky-600 text-white font-medium text-xs sm:text-sm rounded-lg hover:bg-sky-700 transition space-x-2">
+                        <span>✉️</span>
+                        <span>yakobusalexandro@sekolahciputra.sch.id</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-100 border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            SST Connect • Internal Support Operations Guide • Sekolah Ciputra
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Section Navigation Logic
+        function showSection(sectionId) {
+            // Hide all sections
+            const sections = ['section-overview', 'section-quickstart', 'section-workflow', 'section-features', 'section-workspace', 'section-terms', 'section-contact'];
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+                
+                const navBtn = document.getElementById('nav-' + id);
+                if (navBtn) {
+                    navBtn.classList.remove('tab-active');
+                    navBtn.classList.add('text-slate-600');
+                }
+            });
+
+            // Show selected section
+            const activeSection = document.getElementById(sectionId);
+            if (activeSection) activeSection.classList.remove('hidden');
+
+            const activeBtn = document.getElementById('nav-' + sectionId);
+            if (activeBtn) {
+                activeBtn.classList.add('tab-active');
+                activeBtn.classList.remove('text-slate-600');
+            }
+        }
+
+        // Role Selector Filtering Engine
+        function switchRole(role) {
+            const roleBanner = document.getElementById('role-banner');
+            const roleName = document.getElementById('active-role-name');
+            const roleSelect = document.getElementById('role-select');
+
+            if (roleSelect) roleSelect.value = role;
+
+            if (role === 'all') {
+                roleBanner.classList.add('hidden');
+                // Show all cards & rows
+                document.querySelectorAll('.role-card, .role-row').forEach(el => el.classList.remove('opacity-30', 'hidden'));
+            } else {
+                roleBanner.classList.remove('hidden');
+                
+                let readableName = "";
+                if (role === 'pvp') readableName = "Principal & Vice Principal";
+                if (role === 'continuum') readableName = "SST Continuum";
+                if (role === 'member') readableName = "SST Member & EAL Teacher";
+                
+                roleName.innerText = readableName;
+
+                // Dim non-matching role cards/rows
+                document.querySelectorAll('.role-card, .role-row').forEach(el => {
+                    if (el.classList.contains('role-' + role)) {
+                        el.classList.remove('opacity-30', 'hidden');
+                    } else {
+                        el.classList.add('opacity-30');
+                    }
+                });
+            }
+        }
+
+        // Terminology Table Filter
+        function filterTerms() {
+            const input = document.getElementById('terms-search');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('#terms-table .term-row');
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
+        // Initialize Charts via Chart.js
+        document.addEventListener("DOMContentLoaded", function() {
+            // Chart 1: Urgency Distribution Bar Chart
+            const ctxUrgency = document.getElementById('chartUrgency');
+            if (ctxUrgency) {
+                new Chart(ctxUrgency, {
+                    type: 'bar',
+                    data: {
+                        labels: ['MS (Monitor)', 'PS (Priority)', 'WS (Well-being & Safety)'],
+                        datasets: [{
+                            label: 'Number of Active Students',
+                            data: [42, 28, 14],
+                            backgroundColor: ['#0284c7', '#f59e0b', '#e11d48'],
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            // Chart 2: Caseload Summary Pie Chart
+            const ctxCaseload = document.getElementById('chartCaseload');
+            if (ctxCaseload) {
+                new Chart(ctxCaseload, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Member A', 'Member B', 'Member C', 'EAL Specialist A', 'EAL Specialist B'],
+                        datasets: [{
+                            data: [22, 18, 15, 12, 17],
+                            backgroundColor: ['#0284c7', '#0d9488', '#8b5cf6', '#f59e0b', '#64748b']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
